@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     vim \
     sudo libpq-dev zlib1g-dev libicu-dev \
     g++ libgmp-dev libmcrypt-dev libbz2-dev libpng-dev libjpeg62-turbo-dev \
-    libfreetype6-dev libfontconfig
+    libfreetype6-dev libfontconfig locales
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
@@ -28,6 +28,9 @@ RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} >
 ENV NVM_DIR /usr/local/nvm
 ENV NVM_VERSION v0.33.11
 ENV NODE_VERSION 8.9.0
+
+RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+ && docker-php-ext-install -j$(nproc) gd
 
 # Install oh-my-zsh and set ZSH as default shell
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
@@ -48,7 +51,8 @@ RUN ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/local/bin/node \
 RUN npm install -g yarn
 
 # Type docker-php-ext-install to see available extensions
-RUN docker-php-ext-install pdo pdo_mysql bcmath
+RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip \
+    && apt-get clean
 
 # install xdebug and redis
 RUN pecl install xdebug \
@@ -65,5 +69,9 @@ RUN echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 RUN a2enmod rewrite
+
+# Set locale
+RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen
+RUN locale-gen
 
 WORKDIR /var/www/
