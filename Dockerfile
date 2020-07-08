@@ -70,4 +70,4 @@ RUN a2enmod rewrite
 RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen
 RUN locale-gen
 
-WORKDIR /var/www/
+WORKDIR ${APACHE_DOCUMENT_ROOT}
