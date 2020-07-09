@@ -1,6 +1,6 @@
 FROM php:7.3-apache
 ENV TIMEZONE Europe/Berlin
-ARG APACHE_DOCUMENT_ROOT
+ENV APACHE_DOCUMENT_ROOT /var/www/
 
 MAINTAINER Steven Zemelka <steven.zemelka@gmail.com>
 
@@ -62,12 +62,12 @@ RUN echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/
 	&& echo "xdebug.remote_port=9000" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.disabled
 
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -ri -e 's!/var/www/html!$APACHE_DOCUMENT_ROOT!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!$APACHE_DOCUMENT_ROOT!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 RUN a2enmod rewrite
 
 # Set locale
 RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen
 RUN locale-gen
 
-WORKDIR ${APACHE_DOCUMENT_ROOT}
+WORKDIR $APACHE_DOCUMENT_ROOT
