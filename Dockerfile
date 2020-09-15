@@ -27,7 +27,7 @@ RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} >
 	&& mkdir /usr/local/nvm
 ENV NVM_DIR /usr/local/nvm
 ENV NVM_VERSION v0.33.11
-ENV NODE_VERSION 8.9.0
+ENV NODE_VERSION 12.18.4
 
 # Install oh-my-zsh and set ZSH as default shell
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
