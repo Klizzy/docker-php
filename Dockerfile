@@ -25,7 +25,7 @@ ENV NVM_DIR /usr/local/nvm
 ENV NVM_VERSION v0.33.11
 ENV NODE_VERSION 12.18.2
 
-RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-install -j$(nproc) gd
 
 # Install oh-my-zsh and set ZSH as default shell
