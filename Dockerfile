@@ -55,7 +55,7 @@ RUN pecl install xdebug \
 	&& pecl install -o -f redis \
 	&& docker-php-ext-enable xdebug \
 	&& docker-php-ext-enable redis \
-	&& docker-php-ext-install soap  
+	&& docker-php-ext-install soap
 RUN echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.remote_connect_back=0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
