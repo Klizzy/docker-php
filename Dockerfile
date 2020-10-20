@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y gnupg vim git curl wget unzip tmux htop
     g++ libgmp-dev libmcrypt-dev libbz2-dev libpng-dev libjpeg62-turbo-dev \
     libfreetype6-dev libfontconfig \
     librabbitmq-dev libssl-dev gcc make autoconf libc-dev pkg-config \
-    default-mysql-client libmcrypt-dev libpq-dev libmemcached-dev zsh locales libzip-dev \
+    default-mysql-client libmcrypt-dev libpq-dev libmemcached-dev zsh locales libzip-dev libxml2-dev \
      && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -54,7 +54,8 @@ RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql
 RUN pecl install xdebug \
 	&& pecl install -o -f redis \
 	&& docker-php-ext-enable xdebug \
-	&& docker-php-ext-enable redis
+	&& docker-php-ext-enable redis \
+	&& docker-php-ext-install soap
 RUN echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.remote_connect_back=0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
