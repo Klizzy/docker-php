@@ -65,54 +65,6 @@ RUN npm install -g yarn
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
 	&& chsh -s $(which zsh)
 
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-
-# install php modules
-RUN pecl install xdebug-3.1.5 \
-	&& pecl install pcov \
-	&& pecl install amqp \
-	&& pecl install -o -f redis \
-	&& docker-php-ext-enable xdebug \
-	&& docker-php-ext-enable amqp \
-	&& docker-php-ext-enable redis \
-	&& docker-php-ext-enable soap \
-	&& docker-php-ext-enable pcov
-
-# NVM & NPM
-RUN mkdir /usr/local/nvm
-ENV NVM_DIR /usr/local/nvm
-ENV NODE_VERSION 16.19.0
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash \
-    && . $NVM_DIR/nvm.sh \
-    && nvm install $NODE_VERSION \
-    && nvm alias default $NODE_VERSION \
-    && nvm use default
-
-ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
-ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-
-RUN ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/local/bin/node \
-	&& ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/local/bin/npm \
-	&& ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/yarn /usr/local/bin/yarn
-
-### configs and single packages installation
-
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-	&& composer self-update 2.4.4
-
-# Install Symfony CLI binary
-RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
-
-# install yarn and deployer globally
-ENV COMPOSER_ALLOW_SUPERUSER 1
-RUN composer global require deployer/deployer
-RUN npm install -g yarn
-
-# Install oh-my-zsh and set ZSH as default shell
-RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
-	&& chsh -s $(which zsh)
-
 # Copy local config files into image
 COPY ./.zshrc /root/.zshrc
 COPY ./php-modules/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
