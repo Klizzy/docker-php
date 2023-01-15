@@ -11,23 +11,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git c
     default-mysql-client libmcrypt-dev libpq-dev libmemcached-dev zsh locales libzip-dev libxml2-dev \
      && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-	&& composer self-update 2.4.4
+# Type docker-php-ext-install to see available extensions
+RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd \
+    && apt-get clean
 
-# Install Symfony CLI binary
-RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
-ENV COMPOSER_ALLOW_SUPERUSER 1
-RUN composer global require deployer/deployer
-
-# Set timezone
-RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} > /etc/timezone \
-	&& printf '[PHP]\ndate.timezone = "%s"\n', ${TIMEZONE} > /usr/local/etc/php/conf.d/tzone.ini \
-	&& "date"
-
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
- && docker-php-ext-install -j$(nproc) gd
+# install php modules
+RUN pecl install xdebug \
+	&& pecl install pcov \
+    && pecl install amqp \
+	&& pecl install -o -f redis \
+	&& docker-php-ext-enable xdebug \
+    && docker-php-ext-enable amqp \
+	&& docker-php-ext-enable redis \
+	&& docker-php-ext-enable soap \
+	&& docker-php-ext-enable pcov
 
 # NVM & NPM
 RUN mkdir /usr/local/nvm
@@ -46,6 +45,16 @@ RUN ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/local/bin/node \
  && ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/local/bin/npm \
  && ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/yarn /usr/local/bin/yarn
 
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+	&& composer self-update 2.4.4
+
+# Install Symfony CLI binary
+RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
+
+# install yarn and composer globally
+ENV COMPOSER_ALLOW_SUPERUSER 1
+RUN composer global require deployer/deployer
 RUN npm install -g yarn
 
 # Install oh-my-zsh and set ZSH as default shell
@@ -54,20 +63,6 @@ RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -
 
 ADD ./.zshrc /root/.zshrc
 
-# Type docker-php-ext-install to see available extensions
-RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap \
-    && apt-get clean
-
-# install php modules
-RUN pecl install xdebug \
-	&& pecl install pcov \
-    && pecl install amqp \
-	&& pecl install -o -f redis \
-	&& docker-php-ext-enable xdebug \
-    && docker-php-ext-enable amqp \
-	&& docker-php-ext-enable redis \
-	&& docker-php-ext-enable soap \
-	&& docker-php-ext-enable pcov
 RUN echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
@@ -79,8 +74,11 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
     && a2enmod rewrite
 
-# Set locale
-RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen && locale-gen
+# Set locale and timezone
+RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen && locale-gen \
+&& ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} > /etc/timezone \
+&& printf '[PHP]\ndate.timezone = "%s"\n', ${TIMEZONE} > /usr/local/etc/php/conf.d/tzone.ini \
+&& "date"
 
 # Set php.ini values
 RUN cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini \
