@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git c
 # Type docker-php-ext-install to see available extensions
 RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd opcache \
     && apt-get clean
+# Type docker-php-ext-install to see available extensions
+RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd opcache \
+    && apt-get clean
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
@@ -65,18 +68,59 @@ RUN npm install -g yarn
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
 	&& chsh -s $(which zsh)
 
-ADD ./.zshrc /root/.zshrc
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
-# Set Xdebug 3 settings
-RUN echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& echo "xdebug.idekey=\"PHPSTORM\"" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& echo "xdebug.remote_port=9003" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.disabled
+# install php modules
+RUN pecl install xdebug-3.1.5 \
+	&& pecl install pcov \
+	&& pecl install amqp \
+	&& pecl install -o -f redis \
+	&& docker-php-ext-enable xdebug \
+	&& docker-php-ext-enable amqp \
+	&& docker-php-ext-enable redis \
+	&& docker-php-ext-enable soap \
+	&& docker-php-ext-enable pcov
 
-# Add opcache config
-ADD opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+# NVM & NPM
+RUN mkdir /usr/local/nvm
+ENV NVM_DIR /usr/local/nvm
+ENV NODE_VERSION 16.19.0
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash \
+    && . $NVM_DIR/nvm.sh \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION \
+    && nvm use default
+
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+RUN ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/local/bin/node \
+	&& ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/local/bin/npm \
+	&& ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/yarn /usr/local/bin/yarn
+
+### configs and single packages installation
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+	&& composer self-update 2.4.4
+
+# Install Symfony CLI binary
+RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
+
+# install yarn and deployer globally
+ENV COMPOSER_ALLOW_SUPERUSER 1
+RUN composer global require deployer/deployer
+RUN npm install -g yarn
+
+# Install oh-my-zsh and set ZSH as default shell
+RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
+	&& chsh -s $(which zsh)
+
+# Copy local config files into image
+COPY ./.zshrc /root/.zshrc
+COPY ./php-modules/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+RUN mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.disabled
+COPY ./php-modules/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \

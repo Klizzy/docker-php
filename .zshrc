@@ -1,6 +1,6 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
-
+export PATH=~/.composer/vendor/bin:$PATH
 # Path to your oh-my-zsh installation.
 export ZSH=/root/.oh-my-zsh
 
@@ -20,6 +20,10 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 export LANG=en_US.UTF-8
+
+export NVM_DIR="/usr/local/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
