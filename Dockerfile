@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.1-apache
 ENV TIMEZONE Europe/Berlin
 ARG APACHE_DOCUMENT_ROOT
 
