@@ -4,7 +4,7 @@ ARG APACHE_DOCUMENT_ROOT
 
 MAINTAINER Steven Zemelka <steven.zemelka@gmail.com>
 
-RUN apt-get update && apt-get install -y gnupg vim git curl wget unzip tmux htop sudo libpq-dev zlib1g-dev libicu-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git curl wget unzip tmux htop sudo libpq-dev zlib1g-dev libicu-dev \
     g++ libgmp-dev libmcrypt-dev libbz2-dev libpng-dev libjpeg62-turbo-dev \
     libfreetype6-dev libfontconfig \
     librabbitmq-dev libssl-dev gcc make autoconf libc-dev pkg-config \
@@ -58,33 +58,32 @@ ADD ./.zshrc /root/.zshrc
 RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap \
     && apt-get clean
 
-# install xdebug and redis
+# install php modules
 RUN pecl install xdebug \
 	&& pecl install pcov \
+    && pecl install amqp \
 	&& pecl install -o -f redis \
 	&& docker-php-ext-enable xdebug \
+    && docker-php-ext-enable amqp \
 	&& docker-php-ext-enable redis \
 	&& docker-php-ext-enable soap \
 	&& docker-php-ext-enable pcov
-RUN echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+RUN echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-	&& echo "xdebug.remote_connect_back=0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+	&& echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.idekey=\"PHPSTORM\"" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.remote_port=9003" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.disabled
 
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN a2enmod rewrite
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
+    && a2enmod rewrite
 
 # Set locale
-RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen
-RUN locale-gen
+RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen && locale-gen
 
 # Set php.ini values
-RUN cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
-RUN sed -i -e "s/^ *memory_limit.*/memory_limit = -1/g" /usr/local/etc/php/php.ini
+RUN cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini \
+    && sed -i -e "s/^ *memory_limit.*/memory_limit = -1/g" /usr/local/etc/php/php.ini
 
 WORKDIR /var/www
