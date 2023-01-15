@@ -14,13 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git c
      && rm -rf /var/lib/apt/lists/*
 
 # Type docker-php-ext-install to see available extensions
-RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd \
+RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd opcache \
     && apt-get clean
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
 # install php modules
-RUN pecl install xdebug \
+RUN pecl install xdebug-3.1.5 \
 	&& pecl install pcov \
 	&& pecl install amqp \
 	&& pecl install -o -f redis \
@@ -74,6 +74,9 @@ RUN echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/
 	&& echo "xdebug.idekey=\"PHPSTORM\"" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.remote_port=9003" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.disabled
+
+# Add opcache config
+ADD opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
