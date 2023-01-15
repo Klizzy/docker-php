@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git c
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-	&& composer self-update && composer --version
+	&& composer self-update 2.4.4
 
 # Install Symfony CLI binary
 RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
