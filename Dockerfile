@@ -4,6 +4,8 @@ ARG APACHE_DOCUMENT_ROOT
 
 MAINTAINER Steven Zemelka <steven.zemelka@gmail.com>
 
+### heavy installs first, so they will be cached on further builds if only configs further down are changed
+
 RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git curl wget unzip tmux htop sudo libpq-dev zlib1g-dev libicu-dev \
     g++ libgmp-dev libmcrypt-dev libbz2-dev libpng-dev libjpeg62-turbo-dev \
     libfreetype6-dev libfontconfig \
@@ -20,10 +22,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 # install php modules
 RUN pecl install xdebug \
 	&& pecl install pcov \
-    && pecl install amqp \
+	&& pecl install amqp \
 	&& pecl install -o -f redis \
 	&& docker-php-ext-enable xdebug \
-    && docker-php-ext-enable amqp \
+	&& docker-php-ext-enable amqp \
 	&& docker-php-ext-enable redis \
 	&& docker-php-ext-enable soap \
 	&& docker-php-ext-enable pcov
@@ -42,8 +44,10 @@ ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
 RUN ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/local/bin/node \
- && ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/local/bin/npm \
- && ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/yarn /usr/local/bin/yarn
+	&& ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/local/bin/npm \
+	&& ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/yarn /usr/local/bin/yarn
+
+### configs and single packages installation
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
@@ -52,7 +56,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Install Symfony CLI binary
 RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
 
-# install yarn and composer globally
+# install yarn and deployer globally
 ENV COMPOSER_ALLOW_SUPERUSER 1
 RUN composer global require deployer/deployer
 RUN npm install -g yarn
@@ -63,6 +67,7 @@ RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -
 
 ADD ./.zshrc /root/.zshrc
 
+# Set Xdebug 3 settings
 RUN echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 	&& echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
@@ -76,9 +81,9 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 
 # Set locale and timezone
 RUN sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen && locale-gen \
-&& ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} > /etc/timezone \
-&& printf '[PHP]\ndate.timezone = "%s"\n', ${TIMEZONE} > /usr/local/etc/php/conf.d/tzone.ini \
-&& "date"
+	&& ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} > /etc/timezone \
+	&& printf '[PHP]\ndate.timezone = "%s"\n', ${TIMEZONE} > /usr/local/etc/php/conf.d/tzone.ini \
+	&& "date"
 
 # Set php.ini values
 RUN cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini \
