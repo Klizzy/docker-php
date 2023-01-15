@@ -67,7 +67,8 @@ RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -
 
 # Copy local config files into image
 COPY ./.zshrc /root/.zshrc
-COPY ./php-modules/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.disabled
+COPY ./php-modules/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+RUN mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.disabled
 COPY ./php-modules/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
