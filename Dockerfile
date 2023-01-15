@@ -16,9 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git c
 # Type docker-php-ext-install to see available extensions
 RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd opcache \
     && apt-get clean
-# Type docker-php-ext-install to see available extensions
-RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd opcache \
-    && apt-get clean
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
