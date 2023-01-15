@@ -24,11 +24,9 @@ RUN pecl install xdebug-3.1.5 \
 	&& pecl install pcov \
 	&& pecl install amqp \
 	&& pecl install -o -f redis \
-	&& docker-php-ext-enable xdebug \
-	&& docker-php-ext-enable amqp \
-	&& docker-php-ext-enable redis \
-	&& docker-php-ext-enable soap \
-	&& docker-php-ext-enable pcov
+	&& pecl install apcu \
+    && pecl clear-cache \
+	&& docker-php-ext-enable xdebug amqp redis apcu soap pcov
 
 # NVM & NPM
 RUN mkdir /usr/local/nvm
@@ -50,8 +48,7 @@ RUN ln -s $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/local/bin/node \
 ### configs and single packages installation
 
 # Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-	&& composer self-update 2.4.4
+COPY --from=composer:2.4.4 /usr/bin/composer /usr/local/bin/composer
 
 # Install Symfony CLI binary
 RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
