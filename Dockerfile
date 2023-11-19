@@ -7,17 +7,18 @@ MAINTAINER Steven Zemelka <steven.zemelka@gmail.com>
 ### heavy installs first, so they will be cached on further builds if only configs further down are changed
 
 RUN apt-get update && apt-get install -y --no-install-recommends gnupg vim git curl wget unzip tmux htop sudo libpq-dev zlib1g-dev libicu-dev \
-    g++ libgmp-dev libmcrypt-dev libbz2-dev libpng-dev libjpeg62-turbo-dev \
+    g++ libgmp-dev libmcrypt-dev libbz2-dev libpng-dev libjpeg62-turbo-dev libwebp-dev \
     libfreetype6-dev libfontconfig \
     librabbitmq-dev libssl-dev gcc make autoconf libc-dev pkg-config \
     default-mysql-client libmcrypt-dev libpq-dev libmemcached-dev zsh locales libzip-dev libxml2-dev \
      && rm -rf /var/lib/apt/lists/*
 
+RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-webp
+
 # Type docker-php-ext-install to see available extensions
 RUN docker-php-ext-install -j$(nproc) iconv pdo pgsql pdo_pgsql mysqli pdo_mysql intl bcmath gmp bz2 zip soap gd opcache \
     && apt-get clean
 
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
 # install php modules
 RUN pecl install xdebug \
@@ -56,7 +57,7 @@ RUN wget https://get.symfony.com/cli/installer -O - | bash &&  mv /root/.symfony
 # install yarn and deployer globally
 ENV COMPOSER_ALLOW_SUPERUSER 1
 RUN composer global require deployer/deployer
-RUN npm install -g yarn
+RUN npm install -g yarn bun
 
 # Install oh-my-zsh and set ZSH as default shell
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
